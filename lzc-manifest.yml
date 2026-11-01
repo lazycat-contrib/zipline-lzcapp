@@ -1,0 +1,66 @@
+application:
+  subdomain: zipline
+  multi_instance: false
+  upstreams:
+    - location: /package-licenses/
+      backend: file:///lzcapp/pkg/content/licenses/
+    - location: /
+      backend: http://zipline:3000/
+
+services:
+  db:
+    image: docker.1ms.run/library/postgres:16-alpine
+    environment:
+      - POSTGRES_USER=zipline
+      - POSTGRES_DB=zipline
+      - |-
+        POSTGRES_PASSWORD={{ stable_secret "zipline_db_password" | replace "\r" "" | replace "\n" "" }}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U zipline
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    binds:
+      - /lzcapp/var/pgdata:/var/lib/postgresql/data
+
+  zipline:
+    # upstream: ghcr.io/diced/zipline:4.2.0
+    image: ghcr.1ms.run/diced/zipline:4.2.0
+    depends_on:
+      - db
+    environment:
+      # Only DATABASE_URL is required; the password is the platform stable secret.
+      - |-
+        DATABASE_URL=postgres://zipline:{{ stable_secret "zipline_db_password" | replace "\r" "" | replace "\n" "" }}@db:5432/zipline
+      - |-
+        CORE_SECRET={{ stable_secret "zipline_core_secret" | replace "\r" "" | replace "\n" "" }}
+      - |-
+        CORE_URL=https://{{ .S.AppDomain }}
+      - CORE_PORT=3000
+      - TZ=Asia/Shanghai
+    binds:
+      - /lzcapp/var/uploads:/zipline/uploads
+      - /lzcapp/var/public:/zipline/public
+      - /lzcapp/var/themes:/zipline/themes
+
+usage: |
+  Zipline 是文件与图床上传服务：把截图或文件传上去拿到直链，兼容 ShareX 等客户端。
+
+  使用方法：
+  1. 打开应用，首次进入会要求创建第一个账号（该账号自动成为超级管理员）。
+  2. 登录后在「设置」里配置上传大小限制、文件类型白名单和存储方式。
+  3. 要配合 ShareX 等客户端时，生成一个 API Token 填进客户端即可。
+
+  数据与安全：
+  - 上传的文件保存在 /lzcapp/var/uploads，普通静态资源与主题在 /lzcapp/var/public 和 /lzcapp/var/themes；数据库在 /lzcapp/var/pgdata。卸载应用会一并删除，请定期备份。
+  - 数据库密码、会话密钥都由平台稳定密钥生成，每个部署各不相同，不会写成固定值。
+  - 本包不预置账号或默认口令：第一个账号由你在首次访问时创建，并自动获得管理员权限。
+  - 应用经懒猫入口鉴权访问，未开放无需登录的接口路径。
+
+  说明：
+  - 本应用包含两个容器（应用本体 + PostgreSQL），启动顺序由依赖关系保证。
+  - 上传的文件默认存放在本机，如需对接 S3 等对象存储可在应用设置里自行配置。
+  - 未做真机验证：首次建号、文件上传、直链访问、ShareX 对接以及重启后持久化均未在设备上实测。

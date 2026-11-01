@@ -1,0 +1,18 @@
+package: community.lazycat.app.zipline
+version: 4.2.0
+name: Zipline
+description: "ShareX-compatible file and image upload server with a web dashboard."
+min_os_version: "1.5.0"
+homepage: https://github.com/diced/zipline
+author: diced
+license: MIT
+permissions:
+  required:
+    - net.internet
+locales:
+  zh:
+    name: Zipline
+    description: "文件与图床上传服务：兼容 ShareX 等客户端，带网页面板、短链与统计。"
+  en:
+    name: Zipline
+    description: "ShareX-compatible file and image upload server with a web dashboard."
