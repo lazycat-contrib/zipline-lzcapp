@@ -96,7 +96,10 @@ jobs:
                   '/lzcapp/var/public:/zipline/public',
                   '/lzcapp/var/themes:/zipline/themes',
               ]
-              assert 'healthcheck' not in text
+              # No healthcheck may be added to the app service; the db check
+              # uses postgres' own pg_isready and is intentional.
+              assert 'healthcheck' not in svc, svc.get('healthcheck')
+              assert any('pg_isready' in str(x) for x in db['healthcheck']['test'])
               assert 'lzc-file-chooser' not in text
               assert not [n for n in names if n.endswith('deploy_params.yml')]
 
