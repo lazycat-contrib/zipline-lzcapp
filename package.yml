@@ -1,5 +1,5 @@
 package: community.lazycat.app.zipline
-version: 4.2.0
+version: 4.8.2
 name: Zipline
 description: "ShareX-compatible file and image upload server with a web dashboard."
 min_os_version: "1.5.0"
